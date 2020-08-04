@@ -646,28 +646,31 @@
   (quit-restore-window nil 'kill))
 
 
-(use-package ess-site
-  :defer t
-  :commands R-mode
+(use-package ess
+  :after exec-path-from-shell
+  :commands (R-mode)
+  :init
+  (require 'ess-site)
   :config
   (setq
    inferior-r-args "--no-restore"
    ess-use-flymake nil
    ess-use-company t
-   ess-style 'Rstudio
-   ess-indent-with-fancy-comments nil
+   ess-style 'RStudio
+   ess-indent-with-fancy-comments nil)
   (dolist (kw '(ess-R-fl-keyword:fun-defs
 		ess-R-fl-keyword:keywords
 		ess-fl-keyword:fun-calls
 		ess-fl-keyword:delimiters))
     (setf (alist-get kw ess-R-font-lock-keywords) t))
   :bind
-  (:map ess-R-mode-map
-	("C-." . carljv/r-pipe-operator))
-  (:map inferior-ess-mode-map
-	("C-." . carljv/r-pipe-operator))
-  (:map ess-help-mode-map
-	("q" . carljv/kill-ess-help-window))))
+  (:map
+   ess-r-mode-map
+   ("C-." . carljv/r-pipe-operator)
+   :map inferior-ess-mode-map
+   ("C-." . carljv/r-pipe-operator)
+   :map ess-help-mode-map
+   ("q" . carljv/kill-ess-help-window)))
   
 (add-hook 'ess-r-mode '(lambda () (setq indent-tabs-mode nil)))
 
