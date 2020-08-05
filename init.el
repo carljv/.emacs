@@ -23,8 +23,8 @@
 ;; file.
 ;; ============================================================
 
-(defvar *startup-time* 0)
-(defvar *emacs-load-start* (current-time))
+(defvar *carljv/startup-time* 0)
+(defvar *carljv/emacs-load-start* (current-time))
 
 
 ;; ============================================================
@@ -90,12 +90,37 @@
 (setq blink-cursor-blinks 5)
 
 ;; Flash the mode line instead of ringing the bell.
+(defun carljv/flash-mode-line ()
+  "Quickly 'flash' the mode line by inverting the colors quickly."
+  (invert-face 'mode-line)
+  (run-with-timer 0.1 nil 'invert-face 'mode-line))
+  
 (setq visible-bell nil
-      ring-bell-function
-      (lambda ()
-	(invert-face 'mode-line)
-	(run-with-timer 0.1 nil 'invert-face 'mode-line)))
+      ring-bell-function #'carljv/flash-mode-line)
 
+
+(defun load-next-theme (&optional current-theme)
+  "Load the next theme in (CURRENT-AVAIBLE-THEMES). Disable the current custom theme.
+
+If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the first." 
+  (interactive)
+  (let* ((current-theme (or current-theme (car custom-enabled-themes)))
+	 (next-theme
+	  (when current-theme
+	    (cadr
+	     (seq-drop-while
+	      (lambda (elt) (not (eq elt current-theme)))
+	      (custom-available-themes)))))
+	 (next-theme (or next-theme (car (custom-available-themes)))))
+    (while custom-enabled-themes (disable-theme (car custom-enabled-themes)))
+    (condition-case nil
+	(progn (load-theme next-theme t nil)
+	       (when (eq next-theme 'misterioso) (set-cursor-color "white"))
+	       (disable-theme current-theme))
+      (error (load-next-theme next-theme)))
+  (message (symbol-name next-theme))))
+
+(global-set-key (kbd "s-T") #'load-next-theme)
 
 ;; ============================================================
 ;; GUI visual settings
@@ -150,42 +175,42 @@
 (global-unset-key (kbd "C-z"))
 
 ;; OS X-friendly text-zoom keys
-(global-set-key (kbd "s-=") 'text-scale-increase)
-(global-set-key (kbd "s-+") 'text-scale-increase)
-(global-set-key (kbd "s--") 'text-scale-decrease)
-(global-set-key (kbd "s-0") '(lambda () (interactive) (text-scale-adjust "0")))
+(global-set-key (kbd "s-=") #'text-scale-increase)
+(global-set-key (kbd "s-+") #'text-scale-increase)
+(global-set-key (kbd "s--") #'text-scale-decrease)
+(global-set-key (kbd "s-0") (lambda () (interactive) (text-scale-adjust "0")))
 
 
 ;; ⌘-] and ⌘-[ cycle forwards and back around windows in the frame.  
-(global-set-key (kbd "s-]")   'other-window)
-(global-set-key (kbd "s-[")   '(lambda () (interactive) (other-window -1)))
+(global-set-key (kbd "s-]")   #'other-window)
+(global-set-key (kbd "s-[")   (lambda () (interactive) (other-window -1)))
 
 ;; ⌘-} and ⌘-{ cycle through open buffers in the current window.
-(global-set-key (kbd "s-}")   'switch-to-next-buffer)
-(global-set-key (kbd "s-{")   'switch-to-prev-buffer)
+(global-set-key (kbd "s-}")   #'switch-to-next-buffer)
+(global-set-key (kbd "s-{")   #'switch-to-prev-buffer)
 
 ;; ⌘-d splits the current window vertically,
 ;; ⌘-D splits it horizontally.
-(global-set-key (kbd "s-d")   '(lambda ()
-			         (interactive)
-			         (split-window-right)
-			         (other-window 1)))
-(global-set-key (kbd "s-D")   '(lambda ()
-			         (interactive)
-			         (split-window-below)
-			         (other-window 1)))
+(global-set-key (kbd "s-d")   (lambda ()
+				(interactive)
+				(split-window-right)
+				(other-window 1)))
+(global-set-key (kbd "s-D")   (lambda ()
+				(interactive)
+				(split-window-below)
+				(other-window 1)))
 
 ;; ⌘-w deletes the current window. ⌘-W keeps the current window,
 ;; and deletes all the others.
-(global-set-key (kbd "s-w")    'delete-window)
-(global-set-key (kbd "s-W")    'delete-other-windows)
+(global-set-key (kbd "s-w")    #'delete-window)
+(global-set-key (kbd "s-W")    #'delete-other-windows)
 
 
 ;; Easily kill help buffers and other special popups with "q"
 (setq help-window-select t)
 (define-key special-mode-map "q" nil)
 (define-key special-mode-map "q"
-  '(lambda () (interactive) (quit-restore-window nil 'kill)))
+  (lambda () (interactive) (quit-restore-window nil 'kill)))
 
 
 ;; ============================================================
@@ -221,8 +246,8 @@
     (find-file user-init-file)))
 
 ;; Bind this to ⌘-,.
-(global-set-key (kbd "s-,") 'carljv/open-my-init)
-(global-set-key (kbd "C-c ,") 'carljv/open-my-init)
+(global-set-key (kbd "s-,") #'carljv/open-my-init)
+(global-set-key (kbd "C-c ,") #'carljv/open-my-init)
 
 
 
@@ -298,9 +323,9 @@
   :defer t
   :init
   (add-hook 'evil-mode-hook
-	    '(lambda ()
-	       (setq key-chord-two-keys-delay 0.5)
-	       (key-chord-mode 1))))
+	    (lambda ()
+	      (setq key-chord-two-keys-delay 0.5)
+	      (key-chord-mode 1))))
 
 
 ;; The main customizations I make to evil are to
@@ -312,10 +337,10 @@
   (evil-mode 1)
   :config
   (setq evil-symbol-word-search t)
-  (key-chord-define evil-insert-state-map "jj" 'evil-normal-state)
-  (key-chord-define evil-normal-state-map "jj" 'evil-force-normal-state)
-  (key-chord-define evil-visual-state-map "jj" 'evil-change-to-previous-state)
-  (key-chord-define evil-replace-state-map "jj" 'evil-normal-state)
+  (key-chord-define evil-insert-state-map  "jj" #'evil-normal-state)
+  (key-chord-define evil-normal-state-map  "jj" #'evil-force-normal-state)
+  (key-chord-define evil-visual-state-map  "jj" #'evil-change-to-previous-state)
+  (key-chord-define evil-replace-state-map "jj" #'evil-normal-state)
   :bind
   (:map evil-insert-state-map
 	("C-a" . evil-beginning-of-line)
@@ -366,9 +391,9 @@
 ;; We'll add this to eshell-mode-hook later.
 (defun carljv/set-eshell-evil ()
   "Provide reasonable evil-mode motions to 'eshell-mode'."
-  (evil-define-key 'insert eshell-mode-map (kbd "C-a") 'eshell-bol)
-  (evil-define-key 'motion eshell-mode-map (kbd "0")   'eshell-bol)
-  (evil-define-key 'motion eshell-mode-map (kbd "^")   'eshell-bol))
+  (evil-define-key 'insert eshell-mode-map (kbd "C-a") #'eshell-bol)
+  (evil-define-key 'motion eshell-mode-map (kbd "0")   #'eshell-bol)
+  (evil-define-key 'motion eshell-mode-map (kbd "^")   #'eshell-bol))
 
 
 ;; In comint-mode we want evil/vim beginning-of-line keys
@@ -377,8 +402,8 @@
 ;; We'll add this to comint-mode-hook later.
 (defun carljv/set-comint-evil ()
   "Provide reasonable comint-mode motions to 'eshell-mode'."
-  (evil-define-key 'insert comint-mode-map (kbd "0") 'comint-bol)
-  (evil-define-key 'motion comint-mode-map (kbd "^")   'comint-bol))
+  (evil-define-key 'motion comint-mode-map (kbd "0") #'comint-bol)
+  (evil-define-key 'motion comint-mode-map (kbd "^") #'comint-bol))
  
 
 
@@ -421,7 +446,7 @@
 ;; ============================================================
 (use-package magit
   :defer t
-  :init (global-set-key (kbd "C-c g s") 'magit-status))
+  :init (global-set-key (kbd "C-c g s") #'magit-status))
 
 
 ;; ============================================================
@@ -457,6 +482,7 @@
   :hook
   (ess-mode . flycheck-mode)
   (elpy-mode . flycheck-mode)
+  (cider-mode . flycheck-mode)
   :commands flycheck-mode
   :diminish flycheck-mode)
 
@@ -479,7 +505,7 @@
 			 comint-mode-hook
 			 ess-mode-hook
 			 inferior-ess-mode-hook)
-   'company-mode)
+   #'company-mode)
   :diminish company-mode
   :bind (:map company-active-map
 	      ("C-d" . company-show-doc-buffer)))
@@ -606,16 +632,16 @@
         '("git" "log" "l" "diff" "show"))
   :bind
   (:map eshell-mode-map
-	("C-a" . 'eshell-bol)))
+	("C-a" . eshell-bol)))
 
-(global-set-key (kbd "C-c $") 'eshell)
+(global-set-key (kbd "C-c $") #'eshell)
 
 
 ;; ============================================================
 ;; Ielm
 ;; ============================================================
 
-(global-set-key (kbd "C-c >") 'ielm)
+(global-set-key (kbd "C-c >") #'ielm)
 
 
 
@@ -678,10 +704,11 @@
 ;; Define some pretty symbols and activate them
 ;; when ESS runs.
 (defun carljv/make-r-pretty ()
-  (add-to-list 'prettify-symbols-alist '("%>%" . ?⧐))
-  (add-to-list 'prettify-symbols-alist '("<-" . ?⟵))
-  (add-to-list 'prettify-symbols-alist '("->" . ?⟶))
-  (add-to-list 'prettify-symbols-alist '("%in%" . ?∈))
+  (dolist (pretty-pair '(("%>%" . ?⧐)
+			("<-" . ?⟵)
+			("->" . ?⟶)
+			("%in%" . ?∈)))
+	  (add-to-list 'prettify-symbols-alist pretty-pair))
   (prettify-symbols-mode))
 
 (carljv/add-to-hooks
@@ -750,7 +777,7 @@ After selecting ENVNAME, work on that."
 (use-package elpy
   :defer t
   :commands elpy-mode
-  :init (add-hook 'python-mode-hook 'elpy-mode)
+  :init (add-hook 'python-mode-hook #'elpy-mode)
   :config
   (setenv "WORKON_HOME" carljv/conda-env-dir)
   (setq
@@ -775,6 +802,14 @@ After selecting ENVNAME, work on that."
 ;; ============================================================
 ;; Clojure
 ;; ============================================================
+(use-package flycheck-clj-kondo
+  :defer t)
+
+
+(use-package clojure-mode
+  :config
+  (require 'flycheck-clj-kondo))
+
 
 (use-package cider
   :defer t
@@ -816,14 +851,26 @@ After selecting ENVNAME, work on that."
 ;; Compute and display startup time
 ;; ============================================================
 
-(setq *startup-time*
-      (float-time (time-subtract (current-time) *emacs-load-start*)))
+(setq *carljv/startup-time*
+      (float-time (time-subtract (current-time) *carljv/emacs-load-start*)))
 
 (setq initial-scratch-message
       (format ";; Welcome to Emacs!\n%s;; Startup time: %3.2f seconds.\n\n"
               (if (daemonp) (concat "Server      : " (daemonp) "\n") "")
-              *startup-time*))
+              *carljv/startup-time*))
 
-
-
-;;; init.el ends here
+;; init.el ends here
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   (quote
+    (flycheck-clj-kondo use-package subatomic256-theme subatomic-theme spacegray-theme slime-company poly-R nord-theme neotree modus-vivendi-theme material-theme magit leuven-theme key-chord imenu-list humanoid-themes gruvbox-theme grandshell-theme format-all flycheck-pycheckers flatland-theme fantom-theme exec-path-from-shell evil-surround evil-matchit ess elpy eglot dracula-theme counsel-projectile cider avk-emacs-themes auctex atom-one-dark-theme atom-dark-theme apropospriate-theme ag))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
