@@ -94,40 +94,17 @@
   "Quickly 'flash' the mode line by inverting the colors quickly."
   (invert-face 'mode-line)
   (run-with-timer 0.1 nil 'invert-face 'mode-line))
-  
+
 (setq visible-bell nil
       ring-bell-function #'carljv/flash-mode-line)
 
-
-(defun load-next-theme (&optional current-theme)
-  "Load the next theme in (CURRENT-AVAIBLE-THEMES). Disable the current custom theme.
-
-If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the first." 
-  (interactive)
-  (let* ((current-theme (or current-theme (car custom-enabled-themes)))
-	 (next-theme
-	  (when current-theme
-	    (cadr
-	     (seq-drop-while
-	      (lambda (elt) (not (eq elt current-theme)))
-	      (custom-available-themes)))))
-	 (next-theme (or next-theme (car (custom-available-themes)))))
-    (while custom-enabled-themes (disable-theme (car custom-enabled-themes)))
-    (condition-case nil
-	(progn (load-theme next-theme t nil)
-	       (when (eq next-theme 'misterioso) (set-cursor-color "white"))
-	       (disable-theme current-theme))
-      (error (load-next-theme next-theme)))
-  (message (symbol-name next-theme))))
-
-(global-set-key (kbd "s-T") #'load-next-theme)
 
 ;; ============================================================
 ;; GUI visual settings
 ;; -------------------
 ;; There are a number of fancy visual changes I want to make
 ;; that only really work well in graphic/GUI instances, and
-;; I don't want them applied when in terminal Emacs. 
+;; I don't want them applied when in terminal Emacs.
 ;; ============================================================
 
 (defvar *gui-client*  (equal (daemonp) "gui"))
@@ -167,7 +144,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 ;; Global navigation and convenience bindings
 ;; ------------------------------------------
 ;; These are a number of OS X-friendly keybindings for changing
-;; buffers and managing windows. 
+;; buffers and managing windows.
 ;; ============================================================
 
 ;; I hate this keybinding, I often hit it by accident and it
@@ -181,7 +158,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 (global-set-key (kbd "s-0") (lambda () (interactive) (text-scale-adjust "0")))
 
 
-;; ⌘-] and ⌘-[ cycle forwards and back around windows in the frame.  
+;; ⌘-] and ⌘-[ cycle forwards and back around windows in the frame.
 (global-set-key (kbd "s-]")   #'other-window)
 (global-set-key (kbd "s-[")   (lambda () (interactive) (other-window -1)))
 
@@ -230,7 +207,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 ;; -------------------
 ;; Here I bind opening and closing the init.el file to the
 ;; general Mac shortcut for opening app preferences, ⌘-,.
-;; ============================================================  
+;; ============================================================
 
 (defun carljv/open-my-init ()
   "Open init.el or, if it's already open, load it and kill the buffer."
@@ -249,6 +226,35 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 (global-set-key (kbd "s-,") #'carljv/open-my-init)
 (global-set-key (kbd "C-c ,") #'carljv/open-my-init)
 
+
+;; ============================================================
+;; Fast theme-switcher
+;; -------------------
+;; We can cycle through available themes using ⌘-T.
+;; ============================================================
+
+(defun load-next-theme (&optional current-theme)
+  "Load the next theme in (CURRENT-AVAIBLE-THEMES). Disable the current custom theme.
+
+If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the first."
+  (interactive)
+  (let* ((current-theme (or current-theme (car custom-enabled-themes)))
+	 (next-theme
+	  (when current-theme
+	    (cadr
+	     (seq-drop-while
+	      (lambda (elt) (not (eq elt current-theme)))
+	      (custom-available-themes)))))
+	 (next-theme (or next-theme (car (custom-available-themes)))))
+    (while custom-enabled-themes (disable-theme (car custom-enabled-themes)))
+    (condition-case nil
+	(progn (load-theme next-theme t nil)
+	       (when (eq next-theme 'misterioso) (set-cursor-color "white"))
+	       (disable-theme current-theme))
+      (error (load-next-theme next-theme)))
+  (message (symbol-name next-theme))))
+
+(global-set-key (kbd "s-T") #'load-next-theme)
 
 
 ;; ============================================================
@@ -269,7 +275,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 ;; ============================================================
 ;; Set up package repositories
 ;; ============================================================
-    
+
 ;; Tell Emacs where to find packages, and initialize installed packages.
 (require 'package)
 (setq package-archives
@@ -286,7 +292,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 ;;
 ;; This adds 1+ seconds to startup time, so it's nice to defer
 ;; it, but some packages rely on it when they load, so we don't
-;; want to defer it for long. 
+;; want to defer it for long.
 ;; ============================================================
 (use-package exec-path-from-shell
   :defer 1
@@ -294,7 +300,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   (setq exec-path-from-shell-check-startup-files nil)
   :config
   (exec-path-from-shell-initialize))
-  
+
 
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -311,7 +317,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 
 ;; ============================================================
-;; Evil 
+;; Evil
 ;; ----
 ;; evil-mode provides robust vim emulation.
 ;; ============================================================
@@ -347,7 +353,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 	("C-e" . evil-append-line)
 	("C-k" . evil-delete-line)))
 
-   
+
 (use-package evil-matchit
   :after evil
   :config (global-evil-matchit-mode 1))
@@ -404,7 +410,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   "Provide reasonable comint-mode motions to 'eshell-mode'."
   (evil-define-key 'motion comint-mode-map (kbd "0") #'comint-bol)
   (evil-define-key 'motion comint-mode-map (kbd "^") #'comint-bol))
- 
+
 
 
 ;; ============================================================
@@ -467,7 +473,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
      object_usage_linter = NULL,
      open_curly_linter = NULL,
      closed_curly_linter = NULL)"
-  
+
   "Linter settings for lintr with flycheck.")
 
 (use-package flycheck
@@ -543,7 +549,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 ;; Visual Line mode
 ;; ----------------
 ;; Visual line mode is mostly used for "prose" (instead of
-;; "code") buffers. 
+;; "code") buffers.
 ;; ============================================================
 
 (defun carljv/toggle-right-margin ()
@@ -611,10 +617,10 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   (carljv/set-comint-evil)
   :bind (:map comint-mode-map
 	      ("<up>"   . comint-previous-matching-input-from-input)
-              ("<down>" . comint-next-matching-input-from-input)
-              ("C-p"    . comint-previous-matching-input-from-input)
-              ("C-n"    . comint-next-matching-input-from-input)
-              ("C-r"    . comint-history-isearch-backwards-regexp)))
+	      ("<down>" . comint-next-matching-input-from-input)
+	      ("C-p"    . comint-previous-matching-input-from-input)
+	      ("C-n"    . comint-next-matching-input-from-input)
+	      ("C-r"    . comint-history-isearch-backwards-regexp)))
 
 
 
@@ -627,9 +633,9 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   :init (carljv/set-eshell-evil)
   :config
   (setq eshell-visual-commands
-        '("less" "tmux" "htop" "top" "bash" "zsh" "fish")
-        eshell-visual-subcommands
-        '("git" "log" "l" "diff" "show"))
+	'("less" "tmux" "htop" "top" "bash" "zsh" "fish")
+	eshell-visual-subcommands
+	'("git" "log" "l" "diff" "show"))
   :bind
   (:map eshell-mode-map
 	("C-a" . eshell-bol)))
@@ -697,7 +703,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
    ("C-." . carljv/r-pipe-operator)
    :map ess-help-mode-map
    ("q" . carljv/kill-ess-help-window)))
-  
+
 (add-hook 'ess-r-mode '(lambda () (setq indent-tabs-mode nil)))
 
 
@@ -856,8 +862,8 @@ After selecting ENVNAME, work on that."
 
 (setq initial-scratch-message
       (format ";; Welcome to Emacs!\n%s;; Startup time: %3.2f seconds.\n\n"
-              (if (daemonp) (concat "Server      : " (daemonp) "\n") "")
-              *carljv/startup-time*))
+	      (if (daemonp) (concat "Server      : " (daemonp) "\n") "")
+	      *carljv/startup-time*))
 
 ;; init.el ends here
 (custom-set-variables
