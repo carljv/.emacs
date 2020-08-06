@@ -68,7 +68,7 @@
 ;; These settings apply to both GUI and terminal Emacs.
 ;; ============================================================
 
-(defvar *carljv/my-theme* 'misterioso)
+(defvar *carljv/my-theme* 'deeper-blue)
 (defvar *carljv/my-font*  "Triplicate T4c-13")
 
 ;; Get rid of the visual doodads.
@@ -250,9 +250,9 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
     (condition-case nil
 	(progn (load-theme next-theme t nil)
 	       (when (eq next-theme 'misterioso) (set-cursor-color "white"))
-	       (disable-theme current-theme))
-      (error (load-next-theme next-theme)))
-  (message (symbol-name next-theme))))
+	       (disable-theme current-theme)
+	       (message (symbol-name next-theme)))
+      (error (load-next-theme next-theme)))))
 
 (global-set-key (kbd "s-T") #'load-next-theme)
 
@@ -866,17 +866,3 @@ After selecting ENVNAME, work on that."
 	      *carljv/startup-time*))
 
 ;; init.el ends here
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   (quote
-    (flycheck-clj-kondo use-package subatomic256-theme subatomic-theme spacegray-theme slime-company poly-R nord-theme neotree modus-vivendi-theme material-theme magit leuven-theme key-chord imenu-list humanoid-themes gruvbox-theme grandshell-theme format-all flycheck-pycheckers flatland-theme fantom-theme exec-path-from-shell evil-surround evil-matchit ess elpy eglot dracula-theme counsel-projectile cider avk-emacs-themes auctex atom-one-dark-theme atom-dark-theme apropospriate-theme ag))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
