@@ -556,7 +556,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   "Set a margin on the right for prose buffers."
   (interactive)
   (if (null (cdr (window-margins)))
-      (set-window-margins 5 (max 5 (- (window-body-width) 90)))
+      (set-window-margins nil 5 (max 5 (- (window-body-width) 90)))
     (set-window-margins nil 0 0)))
 
 (defun carljv/set-prose-buffer ()
@@ -726,6 +726,45 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 ;; Polymode / RMarkdown
 ;; ============================================================
 
+
+(defun carljv/rmd-file-p ()
+  "Check whether the buffer file is an RMarkdown (.Rmd) file."
+  (string= "rmd" (downcase (file-name-extension (buffer-file-name)))))
+
+
+(defun carljv/knit-to-html ()
+  "If the current buffer is an Rmd file, knit it to HTML."
+  (interactive)
+  (if (not (carljv/rmd-file-p))
+      (error "%s is not an Rmarkdown (.Rmd) file." (buffer-file-name))
+  
+    (let* ((file-name (file-name-nondirectory (buffer-file-name)))
+	   (file-base-name (file-name-base (buffer-file-name)))
+	   (file-ext (file-name-extension (buffer-file-name)))
+	   	   (rmd-buffer (generate-new-buffer "*RMarkdown*")))
+	(async-shell-command
+	 (format "R -e 'rmarkdown::render(\"%s\")'" file-name)
+	 rmd-buffer))))
+
+
+(defun carljv/view-knitted-html ()
+  "If the current buffer is an RMarkdown file with knitted HTML, view it."
+  (interactive)
+  (if (not (carljv/rmd-file-p))
+      (error "%s is not an RMarkdown (.Rmd) file." (buffer-file-name))
+    ;; A knitted HTML file has, by default, the same name as its
+    ;; Rmd file, but with certain characters replaced by hyphens.
+    (let* ((file-base-name (file-name-base (buffer-file-name)))
+	   (shell-chars '(" " "[" "<" ">" "(" ")" "|" ":" "&" ";" "#" "?" "*"))
+	   (html-file-name
+	    (concat
+	     (replace-regexp-in-string (regexp-opt shell-chars) "-" file-base-name)
+	     ".html")))
+      (if (not (file-exists-p html-file-name))
+	  (error "Knitted html file does not exist: %s")
+	(browse-url html-file-name)))))
+
+
 (use-package polymode
   :defer t
   :mode
@@ -733,11 +772,15 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   ("\\.md\\'" . poly-markdown-mode)
   :init
   (use-package poly-R
-    :defer t)
+    :defer t
+    :bind
+    (:map poly-markdown+r-mode-map
+	  ("s-K" . carljv/knit-to-html)
+	  ("s-V" . carljv/view-knitted-html)))
   (use-package poly-markdown
-    :defer t))
-
-
+    :defer t)) 
+ 
+		    
 ;; ============================================================
 ;; Python
 ;; ============================================================
@@ -745,8 +788,6 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 ;; For the moment, I'm using conda for Python
 ;; environment handling. Conda keeps its envs
 ;; in a central directory.
-
-
 (defconst carljv/conda-env-dir
   (concat carljv/anaconda-dir "envs/"))
 
