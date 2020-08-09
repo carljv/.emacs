@@ -428,7 +428,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   (setq
    ivy-extra-directories nil
    counsel-find-file-ignore-regexp "\\(?:\\`[#.]\\)\\|\\(?:[#~]\\'\\)")
-  :diminish ivy-mode
+  :diminish ivy
   :bind
   ("C-s"     . swiper)
   ("M-x"     . counsel-M-x)
@@ -506,15 +506,15 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 (use-package company
   :defer t
   :init
-  (carljv/add-to-hooks '(cider-mode-hook
+  (carljv/add-to-hooks '(emacs-lisp-mode-hook
+			 inferior-emacs-lisp-mode-hook
+			 cider-mode-hook
 			 cider-repl-mode-hook
 			 comint-mode-hook
 			 ess-mode-hook
 			 inferior-ess-mode-hook)
    #'company-mode)
-  :diminish company-mode
-  :bind (:map company-active-map
-	      ("C-d" . company-show-doc-buffer)))
+  :diminish company-mode)
 
 
 ;; ============================================================
@@ -713,7 +713,12 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   (dolist (pretty-pair '(("%>%" . ?⧐)
 			("<-" . ?⟵)
 			("->" . ?⟶)
-			("%in%" . ?∈)))
+			("%in%" . ?∈)
+			("<=" . ?≤)
+			(">=" . ?≥)
+			("==" . ?⩵)
+			("!=" . ?≠)
+			("NULL" . ?∅)))
 	  (add-to-list 'prettify-symbols-alist pretty-pair))
   (prettify-symbols-mode))
 
@@ -725,7 +730,6 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 ;; ============================================================
 ;; Polymode / RMarkdown
 ;; ============================================================
-
 
 (defun carljv/rmd-file-p ()
   "Check whether the buffer file is an RMarkdown (.Rmd) file."
@@ -745,6 +749,33 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 	(async-shell-command
 	 (format "R -e 'rmarkdown::render(\"%s\")'" file-name)
 	 rmd-buffer))))
+
+
+(defun carljv/insert-chunk (chunk-label)
+  "Insert a code chunk into an RMarkdown document."
+  (interactive "sChunk Label:")
+  (let ((chunk (if (string-empty-p chunk-label)
+		   "```{r}\n\n```"
+		 (format "```{r %s}\n\n```" chunk-label))))
+    (insert chunk)
+    (forward-line -1)
+    (beginning-of-line)))
+
+
+(defun carljv/evaluate-chunk ()
+  "Evaluate the code chunk around the point."
+  (interactive)
+  (let ((chunk-start)
+	(chunk-end))
+    (save-excursion
+      (search-backward "```")
+      (forward-line 1)
+      (setq chunk-start (point))
+      (search-forward "```")
+      (forward-line -1)
+      (end-of-line)
+      (setq chunk-end (point))
+      (ess-eval-region chunk-start chunk-end t))))
 
 
 (defun carljv/view-knitted-html ()
@@ -776,18 +807,20 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
     :bind
     (:map poly-markdown+r-mode-map
 	  ("s-K" . carljv/knit-to-html)
-	  ("s-V" . carljv/view-knitted-html)))
+	  ("s-V" . carljv/view-knitted-html)
+	  ("C-c `" . carljv/insert-chunk)
+	  ("C-S-<return>" . carljv/evaluate-chunk)))
   (use-package poly-markdown
-    :defer t)) 
+    :defer t))
  
-		    
+ 	    
 ;; ============================================================
 ;; Python
 ;; ============================================================
 
 ;; For the moment, I'm using conda for Python
 ;; environment handling. Conda keeps its envs
-;; in a central directory.
+;; in a central directory.  
 (defconst carljv/conda-env-dir
   (concat carljv/anaconda-dir "envs/"))
 
@@ -898,12 +931,56 @@ After selecting ENVNAME, work on that."
 ;; Compute and display startup time
 ;; ============================================================
 
+(defconst carljv/emacs-logo
+  "
+;; 
+;;                             ,µ▄▄Æ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄▄▄φ                             
+;;                        ,▄Æ▓▓▓▀▀▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▀▀▓▓▓▓▄▄,                       
+;;                    ,▄▓▓▓▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▀▓▓▓▄                    
+;;                 ,▄▓▓▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▓▄                 
+;;               ▄▓█▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▓Q              
+;;             ▄▓▓▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╝╜``          ╙▒▒▒▒▒▒▒▒▒▒▀▓▓▄            
+;;           ▄▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╦╦╦╦╦╦╦╦╗╖,        ╚▒▒▒▒▒▒▒▒▒▒▀▓▓Q          
+;;         ,▓█▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╜        ▒▒▒▒▒▒▒▒▒▒▒▒▓▓▌         
+;;        ╓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╝╝╜╜╙╙╙╙```                  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓╕       
+;;       ▄█▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒`                             ,╔▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▄      
+;;      ╫█▌▒▒▒▒▒▒▒▒▒▒▒▒▒▒               ,╓╔╦╦@@▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▄     
+;;     ▐█▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒          é▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓µ    
+;;    .▓█▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒,       ╙▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓    
+;;    ╫█▌▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╦        `╙╣▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█▌   
+;;    ██▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒@╖         ╙╝▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█▓   
+;;   ▐█▌▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╦╖        `╙▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█⌐  
+;;   ▐█▌▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╝╜``                  `▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█∩  
+;;   ▐█▌▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╝╙                    ,╖╦@▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█b  
+;;   ▐█▌▒▒▒▒▒▒▒▒▒▒▒▒▒▒╜                ,╓╦@▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█⌐  
+;;   `█▓▒▒▒▒▒▒▒▒▒▒▒▒^              ╓#▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██   
+;;    ▓▓▒▒▒▒▒▒▒▒▒▒▒             ,@▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█▌   
+;;    ▐▓▓▒▒▒▒▒▒▒▒▒▒            ╒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█∩   
+;;     ▀▓▒▒▒▒▒▒▒▒▒▒╗            ╚▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█▌    
+;;      ▓▓▒▒▒▒▒▒▒▒▒▒▒╗              ^╙╨▀▀▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█▓     
+;;       ▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒@╖,                                  `╙╣▒▒▒▒▒▒▒▒▒▒▒█▓      
+;;        ▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒N╗,                              ,▒▒▒▒▒▒▒▒▒▓█▌       
+;;         ▀▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╣╣╣▒▒▒▒▒▒▀╜╙        ,g╣▒▒▒▒▒▒▒▒▒▓█▀        
+;;          ╙▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▀▀╜^        ,╓╔#@▒▒▒▒▒▒▒▒▒▒▒▒▓█▓^         
+;;            ╙▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▀╜╙^     ,,╓╖╗m#@╣▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█▓▀           
+;;              ╙▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█▓▀             
+;;                ╙▀▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓█▀└               
+;;                   ╙▀▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓█▀└                  
+;;                      └▀▀▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓██▀▀'                     
+;;                           ╙▀▀▀▓█▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓█▓▀▀▀└                          
+;;                                  '└╙▀▀▀▀▀▀▀▀└└'
+")							
+
+  
 (setq *carljv/startup-time*
       (float-time (time-subtract (current-time) *carljv/emacs-load-start*)))
 
 (setq initial-scratch-message
-      (format ";; Welcome to Emacs!\n%s;; Startup time: %3.2f seconds.\n\n"
+      (format ";; Welcome to Emacs!\n%s;; Startup time: %3.2f seconds.%s\n\n"
 	      (if (daemonp) (concat "Server      : " (daemonp) "\n") "")
-	      *carljv/startup-time*))
+	      *carljv/startup-time*
+	      carljv/emacs-logo))
 
 ;; init.el ends here
+
+
