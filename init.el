@@ -1,9 +1,9 @@
-					; Carl Vogel's init.el file.
+;;;; Carl Vogel's init.el file.
 
 
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-;;                           PRELUDE / GLOBAL SETTINGS
+;;;;                         PRELUDE / GLOBAL SETTINGS
 ;;                           -------------------------
 ;; This is where I set most of the global settings: visual stuff, global
 ;; keybindings, etc.
@@ -14,8 +14,8 @@
 
 
 ;; ============================================================
-;; Tracking startup time
-;; ---------------------
+;;; Tracking startup time
+;;  ---------------------
 ;; I like to keep track of the load time for my init file.
 ;; I store it in a global variable that I display in the
 ;; scratch buffer on startup. We'll initialize the timing
@@ -28,8 +28,8 @@
 
 
 ;; ============================================================
-;; Relaxing the GC
-;; ---------------
+;;; Relaxing the GC
+;;  ---------------
 ;; By default, Emacs runs the garbage collector when the heap
 ;; exceed 800KB. To avoid GC pauses during startup, we can
 ;; increase that threshold to 100MB (which is fine on a
@@ -41,8 +41,8 @@
 
 
 ;; ============================================================
-;; Basic global variables
-;; ----------------------
+;;; Basic global variables
+;;  ----------------------
 ;; Most of the time I'm working on something in my ~/projects/
 ;; folder, so let's just start there. Also, I want automatic
 ;; backups kept in a single centralized folder, not alongside
@@ -63,8 +63,8 @@
 
 
 ;; ============================================================
-;; Basic visual settings
-;; ---------------------
+;;; Basic visual settings
+;;  ---------------------
 ;; These settings apply to both GUI and terminal Emacs.
 ;; ============================================================
 
@@ -100,8 +100,8 @@
 
 
 ;; ============================================================
-;; GUI visual settings
-;; -------------------
+;;; GUI visual settings
+;;  -------------------
 ;; There are a number of fancy visual changes I want to make
 ;; that only really work well in graphic/GUI instances, and
 ;; I don't want them applied when in terminal Emacs.
@@ -141,8 +141,8 @@
 
 
 ;; ============================================================
-;; Global navigation and convenience bindings
-;; ------------------------------------------
+;;; Global navigation and convenience bindings
+;;  ------------------------------------------
 ;; These are a number of OS X-friendly keybindings for changing
 ;; buffers and managing windows.
 ;; ============================================================
@@ -191,7 +191,7 @@
 
 
 ;; ============================================================
-;; Misc. UI changes
+;;; Misc. UI changes
 ;; ============================================================
 
 ;; Emacs sometimes requires "yes" or "no" instead of "y" and "n".
@@ -203,8 +203,8 @@
 
 
 ;; ============================================================
-;; Fast init.el access
-;; -------------------
+;;; Fast init.el access
+;;  -------------------
 ;; Here I bind opening and closing the init.el file to the
 ;; general Mac shortcut for opening app preferences, ⌘-,.
 ;; ============================================================
@@ -228,8 +228,8 @@
 
 
 ;; ============================================================
-;; Fast theme-switcher
-;; -------------------
+;;; Fast theme-switcher
+;;  -------------------
 ;; We can cycle through available themes using ⌘-T.
 ;; ============================================================
 
@@ -258,7 +258,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 
 ;; ============================================================
-;; Globally-useful convenience functions
+;;; Globally-useful convenience functions
 ;; ============================================================
 
 ;; There are some things I want to apply to multiple mode-hooks
@@ -273,7 +273,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 
 ;; ============================================================
-;; Set up package repositories
+;;; Set up package repositories
 ;; ============================================================
 
 ;; Tell Emacs where to find packages, and initialize installed packages.
@@ -287,13 +287,15 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 ;; other packages.
 (eval-when-compile (require 'use-package))
 
+
 ;; ============================================================
-;; Get PATH from system shell
-;;
+;;; Get PATH from system shell
+;;  --------------------------
 ;; This adds 1+ seconds to startup time, so it's nice to defer
 ;; it, but some packages rely on it when they load, so we don't
 ;; want to defer it for long.
 ;; ============================================================
+
 (use-package exec-path-from-shell
   :defer 1
   :init
@@ -304,7 +306,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-;;                          GENERAL PURPOSE (MINOR) MODES
+;;;;                        GENERAL PURPOSE (MINOR) MODES
 ;;                          -----------------------------
 ;;
 ;; These are modes that I use everywhere. They add general functionality like new
@@ -317,8 +319,8 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 
 ;; ============================================================
-;; Evil
-;; ----
+;;; Evil
+;;  ----
 ;; evil-mode provides robust vim emulation.
 ;; ============================================================
 
@@ -365,8 +367,8 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 
 ;; ============================================================
-;; Fixing evil keybindings in other modes
-;; --------------------------------------
+;;; Fixing evil keybindings in other modes
+;;  --------------------------------------
 ;; In modes with where "lines" are not straightforward --
 ;; like shells, prompts, visual-line-mode, etc. -- evil
 ;; navigation commands don't always work how I want.
@@ -414,8 +416,8 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 
 ;; ============================================================
-;; Ivy, Counsel, and Swiper
-;; ------------------------
+;;; Ivy, Counsel, and Swiper
+;;  ------------------------
 ;; Ivy, counsel and swiper provide improved autocompletion
 ;; for minibuffer interaction (finding commands, files,
 ;; searching in buffers, etc.)
@@ -436,6 +438,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   ("C-h f"   . counsel-describe-function)
   ("C-h v"   . counsel-describe-variable)
   ("C-c i"   . counsel-imenu)
+  ("C-c /"   . counsel-outline)
   ("C-c k"   . counsel-ag)
   ("<f2> i"  . counsel-info-symbol-lookup)
   ("<f2> u"  . counsel-unicode-char)
@@ -444,20 +447,21 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 
 ;; ============================================================
-;; Magit
-;; ----
+;;; Magit
+;;  ----
 ;; Magit is a git porcelain. Doesn't need much customization,
 ;; but I do add a keybinding for bringing up the Git Status
 ;; buffer.
 ;; ============================================================
+
 (use-package magit
   :defer t
   :init (global-set-key (kbd "C-c g s") #'magit-status))
 
 
 ;; ============================================================
-;; Flycheck
-;; --------
+;;; Flycheck
+;;  --------
 ;; Flycheck is a linter backend, and a better alternative to
 ;; Flymake. I add this to specific major modes explicitly.
 ;;
@@ -475,6 +479,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
      closed_curly_linter = NULL)"
 
   "Linter settings for lintr with flycheck.")
+
 
 (use-package flycheck
   :defer t
@@ -494,8 +499,8 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 
 ;; ============================================================
-;; Company
-;; ------
+;;; Company
+;;  ------
 ;; Company is an auto-completion mode. Again, I hook it to
 ;; specific modes explicitly.
 ;;
@@ -518,8 +523,8 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 
 ;; ============================================================
-;; Projectile
-;; ----------
+;;; Projectile
+;;  ----------
 ;; Projectile is a mode for managing "projects".
 ;; ============================================================
 
@@ -536,6 +541,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 ;; ============================================================
 ;; Eldoc
 ;; ============================================================
+
 (use-package eldoc
   :defer t
   :hook
@@ -546,8 +552,8 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 
 ;; ============================================================
-;; Visual Line mode
-;; ----------------
+;;; Visual Line mode
+;;  ----------------
 ;; Visual line mode is mostly used for "prose" (instead of
 ;; "code") buffers.
 ;; ============================================================
@@ -558,6 +564,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   (if (null (cdr (window-margins)))
       (set-window-margins nil 5 (max 5 (- (window-body-width) 90)))
     (set-window-margins nil 0 0)))
+
 
 (defun carljv/set-prose-buffer ()
   "Set up a buffer intended for non-code (prose) content."
@@ -571,7 +578,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-;;                                BUILT-IN EMACS MODES
+;;;;                              BUILT-IN EMACS MODES
 ;;                                --------------------
 ;; These are modes that ship with Emacs, but whose behavior I want to customize.
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -599,7 +606,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 
 ;; ============================================================
-;; Undo Tree
+;;; Undo Tree
 ;; ============================================================
 
 ;; Don't show undo-tree mode in the mode line.
@@ -609,8 +616,9 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 
 ;; ============================================================
-;; Comint mode
+;;; Comint mode
 ;; ============================================================
+
 (use-package comint
   :defer t
   :init
@@ -625,7 +633,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 
 ;; ============================================================
-;; Eshell mode
+;;; Eshell mode
 ;; ============================================================
 
 (use-package eshell
@@ -644,22 +652,21 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 
 ;; ============================================================
-;; Ielm
+;;; Ielm
 ;; ============================================================
 
 (global-set-key (kbd "C-c >") #'ielm)
 
 
-
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-;;                            LANGUAGE-SPECIFIC MODES
+;;;;                          LANGUAGE-SPECIFIC MODES
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 ;; ============================================================
-;; ESS (R)
+;;; ESS (R)
 ;; ============================================================
 
 (defun carljv/r-pipe-operator ()
@@ -728,7 +735,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 
 ;; ============================================================
-;; Polymode / RMarkdown
+;;; Polymode / RMarkdown
 ;; ============================================================
 
 (defun carljv/rmd-file-p ()
@@ -815,7 +822,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
  
  	    
 ;; ============================================================
-;; Python
+;;; Python
 ;; ============================================================
 
 ;; For the moment, I'm using conda for Python
@@ -854,6 +861,7 @@ After selecting ENVNAME, work on that."
     (pyvenv-activate envdir)))
 
 
+;; elpy is a Python development environment for Emacs.
 (use-package elpy
   :defer t
   :commands elpy-mode
@@ -880,17 +888,20 @@ After selecting ENVNAME, work on that."
 
 
 ;; ============================================================
-;; Clojure
+;;; Clojure
 ;; ============================================================
+
+;; clj-kondo is a Clojure linter that works with flycheck.
 (use-package flycheck-clj-kondo
   :defer t)
 
-
+;; Require clj-kondo when we load clojure-mode.
 (use-package clojure-mode
   :config
   (require 'flycheck-clj-kondo))
 
 
+;; CIDER is a Clojure development environment for Emacs.
 (use-package cider
   :defer t
   :init
@@ -904,7 +915,7 @@ After selecting ENVNAME, work on that."
 
 
 ;; ============================================================
-;; Common Lisp / SLIME
+;;; Common Lisp / SLIME
 ;; ============================================================
 
 (use-package slime
@@ -923,12 +934,12 @@ After selecting ENVNAME, work on that."
 
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-;;                                   CODA
+;;;;                                 CODA
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ;; ============================================================
-;; Compute and display startup time
+;;; Compute and display startup time + logo in scratch
 ;; ============================================================
 
 (defconst carljv/emacs-logo
@@ -981,6 +992,6 @@ After selecting ENVNAME, work on that."
 	      *carljv/startup-time*
 	      carljv/emacs-logo))
 
-;; init.el ends here
+;;;; init.el ends here
 
 
