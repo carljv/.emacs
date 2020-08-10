@@ -5,8 +5,8 @@
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;;                           PRELUDE / GLOBAL SETTINGS
 ;;                           -------------------------
-;; This is I set most of the global settings: visual stuff, global keybindings,
-;; etc.
+;; This is where I set most of the global settings: visual stuff, global
+;; keybindings, etc.
 ;;
 ;; This is all the stuff that isn't specific to any particular mode or modes.
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -233,7 +233,7 @@
 ;; We can cycle through available themes using ⌘-T.
 ;; ============================================================
 
-(defun load-next-theme (&optional current-theme)
+(defun carljv/load-next-theme (&optional current-theme)
   "Load the next theme in (CURRENT-AVAIBLE-THEMES). Disable the current custom theme.
 
 If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the first."
@@ -254,7 +254,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 	       (message (symbol-name next-theme)))
       (error (load-next-theme next-theme)))))
 
-(global-set-key (kbd "s-T") #'load-next-theme)
+(global-set-key (kbd "s-T") #'carljv/load-next-theme)
 
 
 ;; ============================================================
