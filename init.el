@@ -98,6 +98,8 @@
 (setq visible-bell nil
       ring-bell-function #'carljv/flash-mode-line)
 
+;; Wrap lines at 80 chars by default.
+(setq-default fill-column 80)
 
 ;; ============================================================
 ;;; GUI visual settings
@@ -252,7 +254,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 	       (when (eq next-theme 'misterioso) (set-cursor-color "white"))
 	       (disable-theme current-theme)
 	       (message (symbol-name next-theme)))
-      (error (load-next-theme next-theme)))))
+      (error (carljv/load-next-theme next-theme)))))
 
 (global-set-key (kbd "s-T") #'carljv/load-next-theme)
 
@@ -269,7 +271,6 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   "Add FN to each hook in a list of HOOKS."
   (dolist (hook hooks)
     (add-hook hook fn)))
-
 
 
 ;; ============================================================
@@ -414,7 +415,6 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   (evil-define-key 'motion comint-mode-map (kbd "^") #'comint-bol))
 
 
-
 ;; ============================================================
 ;;; Ivy, Counsel, and Swiper
 ;;  ------------------------
@@ -490,10 +490,8 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
    flycheck-python-flake8-executable (concat carljv/anaconda-dir "bin/flake8")
    flycheck-python-mypy-executable (concat carljv/anaconda-dir "bin/mypy")
    flycheck-lintr-linters carljv/lintr-linters)
-  :hook
-  (ess-mode . flycheck-mode)
-  (elpy-mode . flycheck-mode)
-  (cider-mode . flycheck-mode)
+  (carljv/add-to-hooks '(ess-mode-hook elpy-mode-hook cider-mode-hook)
+		       #'flycheck-mode)
   :commands flycheck-mode
   :diminish flycheck-mode)
 
@@ -544,10 +542,12 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 (use-package eldoc
   :defer t
-  :hook
-  cider-mode
-  cider-repl-mode
-  emacs-lisp-mode
+  :init
+  (carljv/add-to-hooks '(cider-mode-hook
+			 cider-repl-mode-hook
+			 emacs-lisp-mode-hook)
+		       #'eldoc-mode)
+  :commands eldoc-mode
   :diminish eldoc-mode)
 
 
@@ -583,7 +583,6 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 ;; These are modes that ship with Emacs, but whose behavior I want to customize.
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 
 ;; ============================================================
 ;; Org-mode
@@ -631,7 +630,6 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 	      ("C-r"    . comint-history-isearch-backwards-regexp)))
 
 
-
 ;; ============================================================
 ;;; Eshell mode
 ;; ============================================================
@@ -644,9 +642,9 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 	'("less" "tmux" "htop" "top" "bash" "zsh" "fish")
 	eshell-visual-subcommands
 	'("git" "log" "l" "diff" "show"))
-  :bind
-  (:map eshell-mode-map
-	("C-a" . eshell-bol)))
+  (add-hook 'eshell-mode-hook
+	    '(lambda ()
+	       (define-key eshell-mode-map (kbd "C-a") #'eshell-bol))))
 
 (global-set-key (kbd "C-c $") #'eshell)
 
@@ -663,7 +661,6 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 ;;;;                          LANGUAGE-SPECIFIC MODES
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 
 ;; ============================================================
 ;;; ESS (R)
@@ -687,7 +684,9 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 
 (use-package ess
   :after exec-path-from-shell
-  :commands (R-mode)
+  :mode
+  (("\\.[rR]\\'" . R-mode)
+   ("\\.Rnw\\'" . Rnw-mode))
   :init
   (require 'ess-site)
   :config
@@ -910,7 +909,7 @@ After selecting ENVNAME, work on that."
 	cider-repl-use-pretty-printing t
 	nrepl-hide-special-buffers t
 	cider-saved-file-on-load t)
-  :hook clojure-mode
+  (add-to-hook 'clojure-mode-hook #'cider-mode)
   :diminish clojure-mode)
 
 
