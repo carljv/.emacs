@@ -909,7 +909,7 @@ After selecting ENVNAME, work on that."
 	cider-repl-use-pretty-printing t
 	nrepl-hide-special-buffers t
 	cider-saved-file-on-load t)
-  (add-to-hook 'clojure-mode-hook #'cider-mode)
+  (add-hook 'clojure-mode-hook #'cider-mode)
   :diminish clojure-mode)
 
 
