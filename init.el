@@ -86,8 +86,8 @@
 ;; Flicker matching parens under the cursor.
 (show-paren-mode 1)
 
-;; Only blink the cursor 5 times
-(setq blink-cursor-blinks 5)
+;; Only blink the cursor 1 time.
+(setq blink-cursor-blinks 1)
 
 ;; Flash the mode line instead of ringing the bell.
 (defun carljv/flash-mode-line ()
@@ -354,7 +354,10 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   (:map evil-insert-state-map
 	("C-a" . evil-beginning-of-line)
 	("C-e" . evil-append-line)
-	("C-k" . evil-delete-line)))
+	("C-k" . evil-delete-line)
+  :map evil-normal-state-map
+	("/" . swiper)
+	("*" . swiper-thing-at-point)))
 
 
 (use-package evil-matchit
@@ -487,10 +490,13 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   (setq-default flycheck-disabled-checkers '(python-pylint))
   (setq
    flycheck-r-linter-executable "/usr/local/bin/R"
+   flycheck-sql-sqlint-executable "/usr/local/lib/ruby/gems/2.7.0/bin/sqlint"
    flycheck-python-flake8-executable (concat carljv/anaconda-dir "bin/flake8")
    flycheck-python-mypy-executable (concat carljv/anaconda-dir "bin/mypy")
    flycheck-lintr-linters carljv/lintr-linters)
-  (carljv/add-to-hooks '(ess-mode-hook elpy-mode-hook cider-mode-hook)
+  (carljv/add-to-hooks '(ess-mode-hook
+			 elpy-mode-hook
+			 cider-mode-hook)
 		       #'flycheck-mode)
   :commands flycheck-mode
   :diminish flycheck-mode)
@@ -515,7 +521,9 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 			 cider-repl-mode-hook
 			 comint-mode-hook
 			 ess-mode-hook
-			 inferior-ess-mode-hook)
+			 inferior-ess-mode-hook
+			 bigquery-mode-hook
+			 bq-shell-mode-hook)
    #'company-mode)
   :diminish company-mode)
 
@@ -584,14 +592,39 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
 ;; ============================================================
-;; Org-mode
+;;; Text modes
+;;  ----------
+;;  Use aspell for spell-checking.
+;; ============================================================
+
+
+(use-package text-mode
+  :defer t
+  :commands (text-mode)
+  :preface (provide 'text-mode)
+  :init
+  (customize-set-variable 'ispell-program-name "aspell")
+  (customize-set-variable 'ispell-extra-args '("--sug-mode=ultra")))
+
+
+(use-package flyspell
+  :defer t
+  :init (add-hook 'text-mode-hook #'flyspell-mode))
+ 
+
+;; ============================================================
+;;; Org-mode
 ;; ============================================================
 
 (use-package org
   :defer t
   :config
   (visual-line-mode 1)
+  (setq org-hide-leading-stars 't
+	org-indent-indentation-per-level 1
+	org-adapt-indentation nil)
   (setq-default org-babel-load-languages
 		'((R . t)
 		  (cpp . t)
@@ -601,7 +634,8 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 		  (shell . t)
 		  (sql .t))))
 
-(add-hook 'org-mode 'carljv/set-prose-buffer)
+(add-hook 'org-mode-hook
+	  '(lambda () (auto-fill-mode 1)))
 
 
 ;; ============================================================
@@ -654,6 +688,16 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 ;; ============================================================
 
 (global-set-key (kbd "C-c >") #'ielm)
+
+
+;; ============================================================
+;;; Eww
+;;  ---
+;; I'm typically only using eww as a markdown previewer
+;; ============================================================
+
+(add-hook 'eww-mode-hook
+	  '(lambda () (visual-line-mode 1)))
 
 
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -805,8 +849,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 (use-package polymode
   :defer t
   :mode
-  ("\\.[rR]md\\'" . poly-markdown+R-mode )
-  ("\\.md\\'" . poly-markdown-mode)
+  ("\\.[rR]md\\'" . poly-markdown+R-mode)
   :init
   (use-package poly-R
     :defer t
@@ -817,7 +860,12 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
 	  ("C-c `" . carljv/insert-chunk)
 	  ("C-S-<return>" . carljv/evaluate-chunk)))
   (use-package poly-markdown
-    :defer t))
+    :defer t
+    :init
+    ;; Don't want polymode for regular markdown. Explicitly nix it
+    ;; from the auto-mode list.
+    (setq auto-mode-alist
+	  (delete '("\\.md\\'" . poly-markdown-mode) auto-mode-alist))))
  
  	    
 ;; ============================================================
@@ -887,6 +935,51 @@ After selecting ENVNAME, work on that."
 
 
 ;; ============================================================
+;;; SQL
+;;  ---
+;;  I use an autoformatter for SQL code, but don't use Flycheck
+;;  since the linter is pretty basic and doesn't work well
+;;  with non-ANSI syntax.
+;;
+;;  The basic settings of the formatter are:
+;;  - 2 space indent
+;;  - column names on separate lines
+;;  - wrap at 80 chars (incl. comments)
+;;  - lowercase statement and type names
+;; ============================================================
+
+(use-package sql
+  :defer t
+  :init
+  (setq-default sql-product "postgres")
+  (use-package sqlformat
+    :defer t
+    :init
+    (setq sqlformat-command 'pgformatter
+          sqlformat-args '("-s2" "-g" "-C" "-u1" "-U1"))
+    (add-hook 'sql-mode-hook #'sqlformat-on-save-mode))
+  (use-package sql-indent
+    :defer t))
+
+
+;; ============================================================
+;;; BigQuery
+;;  --------
+;; This is my own home-made BigQuery package. Since I almost
+;; exclusively use BigQuery these days, I'm going to have
+;; it auto-load for all ".sql" files.
+;; ============================================================
+
+(add-to-list 'load-path (expand-file-name "bigquery-mode" user-emacs-directory))
+
+(use-package bigquery
+  :after company
+  :mode ("\\.sql\\'" . bigquery-mode) 
+  :init
+  (add-to-list 'company-backends 'company-bigquery-backend))
+
+
+;; ============================================================
 ;;; Clojure
 ;; ============================================================
 
@@ -896,6 +989,7 @@ After selecting ENVNAME, work on that."
 
 ;; Require clj-kondo when we load clojure-mode.
 (use-package clojure-mode
+  :defer t
   :config
   (require 'flycheck-clj-kondo))
 
@@ -931,6 +1025,29 @@ After selecting ENVNAME, work on that."
   (slime-setup))
 
 
+;; ============================================================
+;;; Markdown
+;;  --------
+;;  For the moment, I'm not using poly-mode with markdown,
+;;  because it's a little wonky (code not being saved,
+;;  Flycheck flagging text, etc.) See the Rmarkdown/polymode
+;;  section where I remove poly-markdown from the
+;;  auto-mode-alist.
+;;
+;; NB. That READMEs are almost always for Github, so we set
+;; them to GFM-mode.
+;; ============================================================
+
+(use-package markdown-mode
+  :ensure t
+  :commands (markdown-mode gfm-mode)
+  :mode (("README\\.md\\'" . gfm-mode)
+         ("\\.md\\'" . markdown-mode)
+         ("\\.markdown\\'" . markdown-mode))
+  :init (setq markdown-command "multimarkdown"))
+
+
+
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;;;;                                 CODA
@@ -938,59 +1055,16 @@ After selecting ENVNAME, work on that."
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ;; ============================================================
-;;; Compute and display startup time + logo in scratch
+;;; Compute and display datetime + startup time in scratch
 ;; ============================================================
-
-(defconst carljv/emacs-logo
-  "
-;; 
-;;                             ,µ▄▄Æ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄▄▄φ                             
-;;                        ,▄Æ▓▓▓▀▀▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▀▀▓▓▓▓▄▄,                       
-;;                    ,▄▓▓▓▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▀▓▓▓▄                    
-;;                 ,▄▓▓▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▓▄                 
-;;               ▄▓█▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▓Q              
-;;             ▄▓▓▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╝╜``          ╙▒▒▒▒▒▒▒▒▒▒▀▓▓▄            
-;;           ▄▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╦╦╦╦╦╦╦╦╗╖,        ╚▒▒▒▒▒▒▒▒▒▒▀▓▓Q          
-;;         ,▓█▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╜        ▒▒▒▒▒▒▒▒▒▒▒▒▓▓▌         
-;;        ╓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╝╝╜╜╙╙╙╙```                  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓╕       
-;;       ▄█▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒`                             ,╔▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▄      
-;;      ╫█▌▒▒▒▒▒▒▒▒▒▒▒▒▒▒               ,╓╔╦╦@@▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▄     
-;;     ▐█▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒          é▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓µ    
-;;    .▓█▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒,       ╙▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓    
-;;    ╫█▌▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╦        `╙╣▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█▌   
-;;    ██▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒@╖         ╙╝▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█▓   
-;;   ▐█▌▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╦╖        `╙▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█⌐  
-;;   ▐█▌▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╝╜``                  `▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█∩  
-;;   ▐█▌▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╝╙                    ,╖╦@▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█b  
-;;   ▐█▌▒▒▒▒▒▒▒▒▒▒▒▒▒▒╜                ,╓╦@▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█⌐  
-;;   `█▓▒▒▒▒▒▒▒▒▒▒▒▒^              ╓#▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██   
-;;    ▓▓▒▒▒▒▒▒▒▒▒▒▒             ,@▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█▌   
-;;    ▐▓▓▒▒▒▒▒▒▒▒▒▒            ╒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█∩   
-;;     ▀▓▒▒▒▒▒▒▒▒▒▒╗            ╚▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█▌    
-;;      ▓▓▒▒▒▒▒▒▒▒▒▒▒╗              ^╙╨▀▀▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█▓     
-;;       ▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒@╖,                                  `╙╣▒▒▒▒▒▒▒▒▒▒▒█▓      
-;;        ▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒N╗,                              ,▒▒▒▒▒▒▒▒▒▓█▌       
-;;         ▀▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒╣╣╣▒▒▒▒▒▒▀╜╙        ,g╣▒▒▒▒▒▒▒▒▒▓█▀        
-;;          ╙▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▀▀╜^        ,╓╔#@▒▒▒▒▒▒▒▒▒▒▒▒▓█▓^         
-;;            ╙▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▀╜╙^     ,,╓╖╗m#@╣▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█▓▀           
-;;              ╙▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓█▓▀             
-;;                ╙▀▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓█▀└               
-;;                   ╙▀▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓█▀└                  
-;;                      └▀▀▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓██▀▀'                     
-;;                           ╙▀▀▀▓█▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓█▓▀▀▀└                          
-;;                                  '└╙▀▀▀▀▀▀▀▀└└'
-")							
-
   
 (setq *carljv/startup-time*
       (float-time (time-subtract (current-time) *carljv/emacs-load-start*)))
 
 (setq initial-scratch-message
-      (format ";; Welcome to Emacs!\n%s;; Startup time: %3.2f seconds.%s\n\n"
-	      (if (daemonp) (concat "Server      : " (daemonp) "\n") "")
-	      *carljv/startup-time*
-	      carljv/emacs-logo))
+      (format ";; Welcome to GNU Emacs!\n%s;; %s\n;; Startup time: %3.2f seconds.\n\n"
+	      (if (daemonp) (concat ";; Server      : " (daemonp) "\n") "")
+	      (format-time-string "%A %B %d, %Y %R ")
+	      *carljv/startup-time*))
 
 ;;;; init.el ends here
-
-
