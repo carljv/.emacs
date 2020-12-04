@@ -142,6 +142,12 @@
   (carljv/graphic-setup))
 
 
+;; ZONE!
+(use-package zone
+  :defer t
+  :config (zone-when-idle 120))
+
+
 ;; ============================================================
 ;;; Global navigation and convenience bindings
 ;;  ------------------------------------------
@@ -350,6 +356,8 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   (key-chord-define evil-normal-state-map  "jj" #'evil-force-normal-state)
   (key-chord-define evil-visual-state-map  "jj" #'evil-change-to-previous-state)
   (key-chord-define evil-replace-state-map "jj" #'evil-normal-state)
+  (evil-ex-define-cmd "e[dit]" #'counsel-find-file)
+  (evil-ex-define-cmd "b[uffer]" #'counsel-switch-buffer)
   :bind
   (:map evil-insert-state-map
 	("C-a" . evil-beginning-of-line)
@@ -974,10 +982,14 @@ After selecting ENVNAME, work on that."
 
 (use-package bigquery
   :after company
-  :mode ("\\.sql\\'" . bigquery-mode) 
+  :mode ("\\.sql\\'" . bigquery-mode)
   :init
-  (add-to-list 'company-backends 'company-bigquery-backend))
-
+  (setq sqlformat-command 'pgformatter
+        sqlformat-args '("-s2" "-g" "-C" "-u1" "-U1"))
+  :config
+  (add-to-list 'company-backends 'company-bigquery-backend)
+  (use-package sqlformat
+    :defer t))
 
 ;; ============================================================
 ;;; Clojure
@@ -1062,9 +1074,13 @@ After selecting ENVNAME, work on that."
       (float-time (time-subtract (current-time) *carljv/emacs-load-start*)))
 
 (setq initial-scratch-message
-      (format ";; Welcome to GNU Emacs!\n%s;; %s\n;; Startup time: %3.2f seconds.\n\n"
+      (concat ";; Welcome to GNU Emacs!\n"
+	      ";; version " emacs-version "\n"
+	      ";; " emacs-copyright "\n"
 	      (if (daemonp) (concat ";; Server      : " (daemonp) "\n") "")
-	      (format-time-string "%A %B %d, %Y %R ")
-	      *carljv/startup-time*))
+	      ";; ═════════════════════════════════════════════════\n"
+	      ";; " (format-time-string "%A %B %d, %Y %R") "\n"
+	      ";; Startup time: " (format "%3.2f seconds" *carljv/startup-time*) "\n"
+	      "\n"))
 
 ;;;; init.el ends here
