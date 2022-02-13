@@ -814,7 +814,7 @@ If the last theme in (CURRENT-AVAILABLE-THEMES) is loaded, cycle back to the fir
   (interactive "sChunk Label:")
   (let ((chunk (if (string-empty-p chunk-label)
 		   "```{r}\n\n```"
-		 (format "```{r %s}\n\n```" chunk-label))))
+		 (format "```{r, %s}\n\n```" chunk-label))))
     (insert chunk)
     (forward-line -1)
     (beginning-of-line)))
@@ -1060,6 +1060,13 @@ After selecting ENVNAME, work on that."
 
 
 
+;; ============================================================
+;;; PDF
+;;  ---
+
+;; ============================================================
+
+
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;;;;                                 CODA
@@ -1084,3 +1091,72 @@ After selecting ENVNAME, work on that."
 	      "\n"))
 
 ;;;; init.el ends here
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(beacon-color "#F8BBD0")
+ '(diff-hl-show-hunk-posframe-internal-border-color "#ffffffffffff")
+ '(evil-emacs-state-cursor '("#D50000" hbar) t)
+ '(evil-insert-state-cursor '("#D50000" bar) t)
+ '(evil-normal-state-cursor '("#F57F17" box) t)
+ '(evil-undo-system 'undo-redo)
+ '(evil-visual-state-cursor '("#66BB6A" box) t)
+ '(fci-rule-color "#202325")
+ '(fringe-mode 10 nil (fringe))
+ '(highlight-indent-guides-auto-enabled nil)
+ '(highlight-symbol-colors
+   '("#F57F17" "#66BB6A" "#0097A7" "#42A5F5" "#7E57C2" "#D84315"))
+ '(highlight-symbol-foreground-color "#546E7A")
+ '(highlight-tail-colors '(("#F8BBD0" . 0) ("#FAFAFA" . 100)))
+ '(ispell-extra-args '("--sug-mode=ultra"))
+ '(ispell-program-name "aspell")
+ '(linum-format " %6d ")
+ '(main-line-color1 "#222232")
+ '(main-line-color2 "#333343")
+ '(mlscroll-in-color "#e67fe67fe67f")
+ '(mlscroll-out-color "#FAFAFA")
+ '(org-latex-compiler "xelatex")
+ '(package-selected-packages
+   '(pdf-tools pandoc-mode ivy-bibtex org-ref use-package subatomic256-theme subatomic-theme sqlformat sql-indent spacegray-theme slime-company poly-R olivetti oauth2 nord-theme neotree monotropic-theme modus-vivendi-theme material-theme magit lsp-ui leuven-theme key-chord imenu-list humanoid-themes gruvbox-theme grandshell-theme format-all flycheck-pycheckers flycheck-clj-kondo flatland-theme fantom-theme exec-path-from-shell evil-surround evil-matchit esup ess elpy eglot dracula-theme counsel-projectile company-lsp command-log-mode clues-theme cider ccls avk-emacs-themes auctex atom-one-dark-theme atom-dark-theme apropospriate-theme ag))
+ '(pos-tip-background-color "#ffffffffffff")
+ '(pos-tip-foreground-color "#78909C")
+ '(powerline-color1 "#222232")
+ '(powerline-color2 "#333343")
+ '(tabbar-background-color "#ffffffffffff")
+ '(tetris-x-colors
+   [[229 192 123]
+    [97 175 239]
+    [209 154 102]
+    [224 108 117]
+    [152 195 121]
+    [198 120 221]
+    [86 182 194]])
+ '(vc-annotate-background "#1f2124")
+ '(vc-annotate-color-map
+   '((20 . "#ff0000")
+     (40 . "#ff4a52")
+     (60 . "#f6aa11")
+     (80 . "#f1e94b")
+     (100 . "#f5f080")
+     (120 . "#f6f080")
+     (140 . "#41a83e")
+     (160 . "#40b83e")
+     (180 . "#b6d877")
+     (200 . "#b7d877")
+     (220 . "#b8d977")
+     (240 . "#b9d977")
+     (260 . "#93e0e3")
+     (280 . "#72aaca")
+     (300 . "#8996a8")
+     (320 . "#afc4db")
+     (340 . "#cfe2f2")
+     (360 . "#dc8cc3")))
+ '(vc-annotate-very-old-color "#dc8cc3"))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
